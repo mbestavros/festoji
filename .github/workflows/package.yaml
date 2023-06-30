@@ -6,8 +6,8 @@ on:
   workflow_dispatch:
 
 env:
-  IMAGE_REGISTRY: quay.io
-  IMAGE_REPO: lucarval/festoji
+  IMAGE_REGISTRY: ghcr.io
+  IMAGE_REPO: mbestavros/festoji
   IMAGE_TAGS: latest
 
 jobs:
@@ -32,19 +32,19 @@ jobs:
     - name: Install Syft
       uses: anchore/sbom-action/download-syft@v0.14.3
 
+    - name: Log in to ghcr
+      uses: redhat-actions/podman-login@v1
+      with:
+        registry: ${{ env.IMAGE_REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Log in to Red Hat Registry
       uses: redhat-actions/podman-login@v1
       with:
         registry: registry.redhat.io
         username: ${{ secrets.REGISTRY_REDHAT_IO_USER }}
         password: ${{ secrets.REGISTRY_REDHAT_IO_PASSWORD }}
-
-    - name: Log in to quay.io
-      uses: redhat-actions/podman-login@v1
-      with:
-        username: ${{ vars.REGISTRY_QUAY_IO_USER }}
-        password: ${{ secrets.REGISTRY_QUAY_IO_PASSWORD }}
-        registry: quay.io
 
     - name: Buildah Action
       id: build-image
@@ -54,7 +54,7 @@ jobs:
         tags: ${{ env.IMAGE_TAGS }}
         dockerfiles: ./Dockerfile
 
-    - name: Push to quay.io
+    - name: Push to ghcr
       id: push-image
       uses: redhat-actions/push-to-registry@v2
       with:
@@ -85,6 +85,6 @@ jobs:
     with:
       image: ${{ needs.build.outputs.image }}
       digest: ${{ needs.build.outputs.digest }}
-      registry-username: ${{ vars.REGISTRY_QUAY_IO_USER }}
+      registry-username: ${{ github.actor }}
     secrets:
-      registry-password: ${{ secrets.REGISTRY_QUAY_IO_PASSWORD }}
+      registry-password: ${{ secrets.GITHUB_TOKEN }}
