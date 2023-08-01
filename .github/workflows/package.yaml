@@ -17,7 +17,7 @@ jobs:
 
     permissions:
       # Needed for signing the container image with GitHub OIDC Token
-      id-token: write
+      write-all
 
     outputs:
       image:  ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_REPO }}
@@ -39,13 +39,6 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Log in to Red Hat Registry
-      uses: redhat-actions/podman-login@v1
-      with:
-        registry: registry.redhat.io
-        username: ${{ secrets.REGISTRY_REDHAT_IO_USER }}
-        password: ${{ secrets.REGISTRY_REDHAT_IO_PASSWORD }}
-
     - name: Buildah Action
       id: build-image
       uses: redhat-actions/buildah-build@v2
@@ -61,6 +54,8 @@ jobs:
         registry: ${{ env.IMAGE_REGISTRY }}
         image: ${{ steps.build-image.outputs.image }}
         tags: ${{ steps.build-image.outputs.tags }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Sign image with GitHub OIDC Token
       run: cosign sign --yes ${IMAGE_REGISTRY}/${IMAGE_REPO}@${DIGEST}
